@@ -129,6 +129,8 @@ def steady_state_residual(
     model: Model738,
     current_a: float,
     ts_c: float,
+    use_radial_gradient: bool = False,
+    kth_w_per_m_c: float = 1.0,
 ) -> float:
     """
     Residual for solving conductor temperature from current.
@@ -141,9 +143,19 @@ def steady_state_residual(
     residual < 0:
         assumed temperature is too low
     """
+    tavg_c = ts_c
+    if use_radial_gradient:
+        radial = solve_radial_gradient(
+            model=model,
+            surface_temp_c=ts_c,
+            current_a=current_a,
+            kth_w_per_m_c=kth_w_per_m_c,
+        )
+        tavg_c = radial.avg_temp_c
+
     terms = model.heat_terms(
         ts_c=ts_c,
-        tavg_c=ts_c,
+        tavg_c=tavg_c,
         current_a=current_a,
     )
 
@@ -157,21 +169,62 @@ def solve_steady_state_temperature(
     high_c: float = 300.0,
     tolerance_c: float = 1e-4,
     max_iter: int = 100,
+    auto_expand: bool = True,
+    min_c: float = -200.0,
+    max_c: float = 2000.0,
+    use_radial_gradient: bool = False,
+    kth_w_per_m_c: float = 1.0,
 ) -> float:
     """
     Given current, solve steady-state conductor temperature.
 
     Uses bisection.
     """
-    f_low = steady_state_residual(model, current_a, low_c)
-    f_high = steady_state_residual(model, current_a, high_c)
+    f_low = steady_state_residual(
+        model, current_a, low_c, use_radial_gradient, kth_w_per_m_c
+    )
+    f_high = steady_state_residual(
+        model, current_a, high_c, use_radial_gradient, kth_w_per_m_c
+    )
+
+    if auto_expand:
+        expansion_step_c = max(abs(high_c - low_c), 10.0)
+
+        for _ in range(max_iter):
+            if f_low * f_high <= 0:
+                break
+
+            if f_low < 0 and f_high < 0:
+                high_c += expansion_step_c
+                if high_c > max_c:
+                    high_c = max_c
+                f_high = steady_state_residual(
+                    model, current_a, high_c, use_radial_gradient, kth_w_per_m_c
+                )
+            elif f_low > 0 and f_high > 0:
+                low_c -= expansion_step_c
+                if low_c < min_c:
+                    low_c = min_c
+                f_low = steady_state_residual(
+                    model, current_a, low_c, use_radial_gradient, kth_w_per_m_c
+                )
+
+            if low_c <= min_c and high_c >= max_c:
+                break
+
+            expansion_step_c *= 1.5
 
     if f_low * f_high > 0:
-        raise ValueError("Temperature range does not bracket the solution.")
+        raise ValueError(
+            "Temperature range does not bracket the solution "
+            f"between {low_c:g} C and {high_c:g} C."
+        )
 
     for _ in range(max_iter):
         mid_c = (low_c + high_c) / 2.0
-        f_mid = steady_state_residual(model, current_a, mid_c)
+        f_mid = steady_state_residual(
+            model, current_a, mid_c, use_radial_gradient, kth_w_per_m_c
+        )
 
         if abs(high_c - low_c) < tolerance_c or abs(f_mid) < 1e-8:
             return mid_c
@@ -191,6 +244,9 @@ def steady_state_report_from_current(
     current_a: float,
     low_c: float = -50.0,
     high_c: float = 300.0,
+    auto_expand: bool = True,
+    use_radial_gradient: bool = False,
+    kth_w_per_m_c: float = 1.0,
 ) -> SteadyStateResult:
     """
     Given current, solve temperature and return full steady-state report.
@@ -200,17 +256,30 @@ def steady_state_report_from_current(
         current_a=current_a,
         low_c=low_c,
         high_c=high_c,
+        auto_expand=auto_expand,
+        use_radial_gradient=use_radial_gradient,
+        kth_w_per_m_c=kth_w_per_m_c,
     )
+
+    tavg_c = ts_c
+    if use_radial_gradient:
+        radial = solve_radial_gradient(
+            model=model,
+            surface_temp_c=ts_c,
+            current_a=current_a,
+            kth_w_per_m_c=kth_w_per_m_c,
+        )
+        tavg_c = radial.avg_temp_c
 
     terms = model.heat_terms(
         ts_c=ts_c,
-        tavg_c=ts_c,
+        tavg_c=tavg_c,
         current_a=current_a,
     )
 
     return SteadyStateResult(
         surface_temp_c=ts_c,
-        avg_temp_c=ts_c,
+        avg_temp_c=tavg_c,
         current_a=current_a,
 
         q_c_w_per_m=terms["q_c_W_per_m"],

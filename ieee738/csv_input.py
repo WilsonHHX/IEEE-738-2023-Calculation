@@ -40,6 +40,15 @@ REQUIRED_VARIABLES = {
 }
 
 
+OPTIONAL_BLANK_DEFAULTS = {
+    "d_core": 0.0,
+    "mass_steel_kg_per_m": 0.0,
+    "mass_aluminum_kg_per_m": Conductor.__dataclass_fields__[
+        "mass_aluminum_kg_per_m"
+    ].default,
+}
+
+
 @dataclass
 class CsvInput:
     values: dict[str, float]
@@ -87,20 +96,32 @@ def read_input_csv(path: str | Path) -> CsvInput:
             if variable_name in values:
                 raise ValueError(f"Duplicate variable in CSV: {variable_name}")
 
-            try:
-                value = float(raw_value)
-            except ValueError as exc:
-                raise ValueError(
-                    f"CSV row {row_number} value for {variable_name} must be numeric."
-                ) from exc
+            if raw_value == "":
+                if variable_name not in OPTIONAL_BLANK_DEFAULTS:
+                    raise ValueError(
+                        f"CSV row {row_number} value for {variable_name} is blank. "
+                        "Only d_core, mass_steel_kg_per_m, and "
+                        "mass_aluminum_kg_per_m may be blank."
+                    )
+                value = OPTIONAL_BLANK_DEFAULTS[variable_name]
+            else:
+                try:
+                    value = float(raw_value)
+                except ValueError as exc:
+                    raise ValueError(
+                        f"CSV row {row_number} value for {variable_name} must be numeric."
+                    ) from exc
 
             labels[variable_name] = name
             values[variable_name] = value
             units[variable_name] = unit
 
-    missing = sorted(REQUIRED_VARIABLES - set(values))
+    missing = sorted((REQUIRED_VARIABLES - set(values)) - set(OPTIONAL_BLANK_DEFAULTS))
     if missing:
         raise ValueError("CSV input is missing required variables: " + ", ".join(missing))
+
+    for variable_name, default_value in OPTIONAL_BLANK_DEFAULTS.items():
+        values.setdefault(variable_name, default_value)
 
     unknown = sorted(set(values) - REQUIRED_VARIABLES)
     if unknown:

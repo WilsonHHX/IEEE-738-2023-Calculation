@@ -100,17 +100,10 @@ def save_current_temperature_curve(
         max_surface_temp_c=max_surface_temp_c,
     )
 
-    current_no_radial_a = []
     current_radial_a = []
+    core_temperatures_c = []
 
     for ts_c in temperatures_c:
-        current_no_radial_a.append(
-            steady_state_report_from_temperature(
-                model=model,
-                ts_c=ts_c,
-                use_radial_gradient=False,
-            ).current_a
-        )
         current_radial_a.append(
             steady_state_report_from_temperature(
                 model=model,
@@ -119,24 +112,34 @@ def save_current_temperature_curve(
                 kth_w_per_m_c=kth_w_per_m_c,
             ).current_a
         )
+        radial = solve_radial_gradient(
+            model=model,
+            surface_temp_c=ts_c,
+            current_a=current_radial_a[-1],
+            kth_w_per_m_c=kth_w_per_m_c,
+        )
+        core_temperatures_c.append(radial.core_temp_c)
 
-    max_no_radial_a = current_no_radial_a[-1]
     max_radial_a = current_radial_a[-1]
+    max_core_temp_c = core_temperatures_c[-1]
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     output_path = OUTPUT_DIR / "current_temperature_curve.png"
 
     fig, ax = plt.subplots(figsize=(8.5, 5.2), dpi=150)
     ax.plot(
-        current_no_radial_a,
+        current_radial_a,
         temperatures_c,
-        label="No radial thermal gradient",
+        label="Surface temperature",
+        color="tab:red",
         linewidth=2.2,
     )
     ax.plot(
         current_radial_a,
-        temperatures_c,
-        label="With radial thermal gradient",
+        core_temperatures_c,
+        label="Core/center temperature",
+        color="tab:red",
+        linestyle=":",
         linewidth=2.2,
     )
     ax.axhline(
@@ -146,35 +149,36 @@ def save_current_temperature_curve(
         linewidth=1.2,
     )
     ax.scatter(
-        [max_no_radial_a],
+        [max_radial_a],
         [max_surface_temp_c],
         s=52,
         zorder=3,
     )
     ax.scatter(
         [max_radial_a],
-        [max_surface_temp_c],
+        [max_core_temp_c],
         s=52,
         zorder=3,
+        color="tab:red",
     )
     ax.annotate(
-        f"No radial: {max_no_radial_a:.1f} A @ {max_surface_temp_c:.1f} C",
-        xy=(max_no_radial_a, max_surface_temp_c),
-        xytext=(-120, 24),
-        textcoords="offset points",
-        arrowprops={"arrowstyle": "->", "linewidth": 1.0},
-    )
-    ax.annotate(
-        f"With radial: {max_radial_a:.1f} A @ {max_surface_temp_c:.1f} C",
+        f"Surface: {max_radial_a:.1f} A @ {max_surface_temp_c:.1f} C",
         xy=(max_radial_a, max_surface_temp_c),
         xytext=(-120, -36),
         textcoords="offset points",
         arrowprops={"arrowstyle": "->", "linewidth": 1.0},
     )
+    ax.annotate(
+        f"Core/center: {max_core_temp_c:.1f} C",
+        xy=(max_radial_a, max_core_temp_c),
+        xytext=(-120, 28),
+        textcoords="offset points",
+        arrowprops={"arrowstyle": "->", "linewidth": 1.0},
+    )
 
-    ax.set_title("Current-Temperature Curve")
+    ax.set_title("Static Rating Current-Temperature Curve With Radial Gradient")
     ax.set_xlabel("Current, A")
-    ax.set_ylabel("Conductor surface temperature, C")
+    ax.set_ylabel("Conductor temperature, C")
     ax.grid(True, alpha=0.3)
     ax.legend()
     fig.tight_layout()
@@ -190,51 +194,88 @@ def save_transient_step_curve(
     final_current_a: float,
     duration_s: float,
     dt_s: float = 10.0,
+    kth_w_per_m_c: float = 1.0,
 ) -> Path:
     import matplotlib.pyplot as plt
 
     initial_state = steady_state_report_from_temperature(
         model=model,
         ts_c=initial_surface_temp_c,
-        use_radial_gradient=False,
+        use_radial_gradient=True,
+        kth_w_per_m_c=kth_w_per_m_c,
     )
     final_state = steady_state_report_from_current(
         model=model,
         current_a=final_current_a,
         low_c=model.w.t_a_c,
-        high_c=300.0,
+        high_c=max(initial_surface_temp_c, model.w.t_a_c + 10.0),
+        use_radial_gradient=True,
+        kth_w_per_m_c=kth_w_per_m_c,
     )
 
     curve = transient_temperature_curve(
         model=model,
-        initial_temp_c=initial_state.surface_temp_c,
+        initial_temp_c=initial_state.avg_temp_c,
         current_a=final_current_a,
         duration_s=duration_s,
         dt_s=dt_s,
-        use_radial_gradient=False,
+        use_radial_gradient=True,
+        kth_w_per_m_c=kth_w_per_m_c,
+        initial_current_a=initial_state.current_a,
     )
 
     time_s = [state.time_s for state in curve]
-    temperature_c = [state.surface_temp_c for state in curve]
+    surface_temperature_c = [state.surface_temp_c for state in curve]
+    core_temperature_c = [
+        state.core_temp_c if state.core_temp_c is not None else state.surface_temp_c
+        for state in curve
+    ]
+    final_radial = solve_radial_gradient(
+        model=model,
+        surface_temp_c=final_state.surface_temp_c,
+        current_a=final_current_a,
+        kth_w_per_m_c=kth_w_per_m_c,
+    )
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     output_path = OUTPUT_DIR / "transient_step_curve.png"
 
     fig, ax = plt.subplots(figsize=(8.5, 5.2), dpi=150)
-    ax.plot(time_s, temperature_c, label="Transient surface temperature", linewidth=2.2)
+    ax.plot(
+        time_s,
+        surface_temperature_c,
+        label="Transient surface temperature",
+        color="tab:red",
+        linewidth=2.2,
+    )
+    ax.plot(
+        time_s,
+        core_temperature_c,
+        label="Transient core/center temperature",
+        color="tab:red",
+        linestyle=":",
+        linewidth=2.2,
+    )
     ax.axhline(
         initial_state.surface_temp_c,
         color="0.35",
         linestyle="--",
         linewidth=1.2,
-        label=f"Initial steady state: {initial_state.current_a:.1f} A",
+        label=f"Initial surface steady state: {initial_state.current_a:.1f} A",
     )
     ax.axhline(
         final_state.surface_temp_c,
         color="0.15",
         linestyle=":",
         linewidth=1.5,
-        label=f"Final steady state: {final_current_a:.1f} A",
+        label=f"Final surface steady state: {final_current_a:.1f} A",
+    )
+    ax.axhline(
+        final_radial.core_temp_c,
+        color="0.25",
+        linestyle="-.",
+        linewidth=1.3,
+        label=f"Final core/center steady state: {final_current_a:.1f} A",
     )
 
     ax.set_title(
@@ -242,7 +283,7 @@ def save_transient_step_curve(
         f"({initial_state.current_a:.1f} A to {final_current_a:.1f} A)"
     )
     ax.set_xlabel("Time, s")
-    ax.set_ylabel("Conductor surface temperature, C")
+    ax.set_ylabel("Conductor temperature, C")
     ax.grid(True, alpha=0.3)
 
     ax_current = ax.twinx()
@@ -301,19 +342,23 @@ def save_time_constant_curve(
     final_current_a: float,
     duration_s: float | None = None,
     dt_s: float = 10.0,
+    kth_w_per_m_c: float = 1.0,
 ):
     import matplotlib.pyplot as plt
 
     initial_state = steady_state_report_from_temperature(
         model=model,
         ts_c=initial_surface_temp_c,
-        use_radial_gradient=False,
+        use_radial_gradient=True,
+        kth_w_per_m_c=kth_w_per_m_c,
     )
     final_state = steady_state_report_from_current(
         model=model,
         current_a=final_current_a,
         low_c=model.w.t_a_c,
-        high_c=300.0,
+        high_c=max(initial_surface_temp_c, model.w.t_a_c + 10.0),
+        use_radial_gradient=True,
+        kth_w_per_m_c=kth_w_per_m_c,
     )
     time_constant = calculate_time_constant(
         model=model,
@@ -435,61 +480,35 @@ def main():
         print(f"{key:25s}: {value:.10f}")
 
     # ------------------------------------------------------------
-    # Steady-state ampacity, no radial gradient
-    # ------------------------------------------------------------
-    print("\n=== Steady-state ampacity, no radial gradient ===")
-    result = steady_state_report_from_temperature(
-        model=model738,
-        ts_c=max_surface_temp_c,
-        use_radial_gradient=False,
-    )
-
-    print(f"R(Tavg)       = {result.resistance_ohm_per_km:.10f} ohm/km")
-    print(f"qc + qr - qs  = {result.cooling_w_per_m - result.q_s_w_per_m:.10f} W/m")
-    print(f"I             = {result.current_a:.10f} A")
-    print(f"qc            = {result.q_c_w_per_m:.10f} W/m")
-    print(f"qr            = {result.q_r_w_per_m:.10f} W/m")
-    print(f"qs            = {result.q_s_w_per_m:.10f} W/m")
-    print(f"qj            = {result.q_joule_w_per_m:.10f} W/m")
-    print(f"net heat      = {result.net_heat_w_per_m:.12f} W/m")
-
-    # ------------------------------------------------------------
-    # Radial gradient check
-    # ------------------------------------------------------------
-    print(
-        f"\n=== Radial thermal gradient at Ts = {max_surface_temp_c:g} C, "
-        f"I = {result.current_a:.3f} A ==="
-    )
-    radial = solve_radial_gradient(
-        model=model738,
-        surface_temp_c=max_surface_temp_c,
-        current_a=result.current_a,
-        kth_w_per_m_c=kth_w_per_m_c,
-    )
-
-    print(f"Ts            = {radial.surface_temp_c:.10f} C")
-    print(f"Tcore         = {radial.core_temp_c:.10f} C")
-    print(f"Tavg_new      = {radial.avg_temp_c:.10f} C")
-    print(f"Tcore - Ts    = {radial.delta_core_surface_c:.10f} C")
-    print(f"R(Tavg_new)   = {radial.resistance_ohm_per_km:.10f} ohm/km")
-    print(f"iterations    = {radial.iterations}")
-
-    # ------------------------------------------------------------
     # Steady-state ampacity with radial gradient
     # ------------------------------------------------------------
-    print("\n=== Steady-state ampacity, with radial gradient ===")
+    print("\n=== Steady-state ampacity with radial thermal gradient ===")
     result_radial = steady_state_report_from_temperature(
         model=model738,
         ts_c=max_surface_temp_c,
         use_radial_gradient=True,
         kth_w_per_m_c=kth_w_per_m_c,
     )
+    radial = solve_radial_gradient(
+        model=model738,
+        surface_temp_c=max_surface_temp_c,
+        current_a=result_radial.current_a,
+        kth_w_per_m_c=kth_w_per_m_c,
+    )
 
     print(f"Ts            = {result_radial.surface_temp_c:.10f} C")
+    print(f"Tcore         = {radial.core_temp_c:.10f} C")
     print(f"Tavg          = {result_radial.avg_temp_c:.10f} C")
+    print(f"Tcore - Ts    = {radial.delta_core_surface_c:.10f} C")
     print(f"R(Tavg)       = {result_radial.resistance_ohm_per_km:.10f} ohm/km")
+    print(f"qc + qr - qs  = {result_radial.cooling_w_per_m - result_radial.q_s_w_per_m:.10f} W/m")
     print(f"I             = {result_radial.current_a:.10f} A")
+    print(f"qc            = {result_radial.q_c_w_per_m:.10f} W/m")
+    print(f"qr            = {result_radial.q_r_w_per_m:.10f} W/m")
+    print(f"qs            = {result_radial.q_s_w_per_m:.10f} W/m")
+    print(f"qj            = {result_radial.q_joule_w_per_m:.10f} W/m")
     print(f"net heat      = {result_radial.net_heat_w_per_m:.12f} W/m")
+    print(f"iterations    = {radial.iterations}")
 
     # ------------------------------------------------------------
     # Given current, solve steady-state temperature
@@ -501,12 +520,23 @@ def main():
     result_current = steady_state_report_from_current(
         model=model738,
         current_a=final_step_current_a,
-        low_c=40.0,
-        high_c=250.0,
+        low_c=model738.w.t_a_c,
+        high_c=max(max_surface_temp_c, model738.w.t_a_c + 10.0),
+        use_radial_gradient=True,
+        kth_w_per_m_c=kth_w_per_m_c,
+    )
+    radial_current = solve_radial_gradient(
+        model=model738,
+        surface_temp_c=result_current.surface_temp_c,
+        current_a=final_step_current_a,
+        kth_w_per_m_c=kth_w_per_m_c,
     )
 
     print(f"I             = {result_current.current_a:.10f} A")
     print(f"Ts            = {result_current.surface_temp_c:.10f} C")
+    print(f"Tcore         = {radial_current.core_temp_c:.10f} C")
+    print(f"Tavg          = {result_current.avg_temp_c:.10f} C")
+    print(f"Tcore - Ts    = {radial_current.delta_core_surface_c:.10f} C")
     print(f"R(Tavg)       = {result_current.resistance_ohm_per_km:.10f} ohm/km")
     print(f"qc            = {result_current.q_c_w_per_m:.10f} W/m")
     print(f"qr            = {result_current.q_r_w_per_m:.10f} W/m")
@@ -522,18 +552,26 @@ def main():
 
     curve = transient_temperature_curve(
         model=model738,
-        initial_temp_c=max_surface_temp_c,
+        initial_temp_c=result_radial.avg_temp_c,
         current_a=final_step_current_a,
         duration_s=60.0,
         dt_s=10.0,
-        use_radial_gradient=False,
+        use_radial_gradient=True,
+        kth_w_per_m_c=kth_w_per_m_c,
+        initial_current_a=result_radial.current_a,
     )
 
     for state in curve:
+        core_temp_text = (
+            f"{state.core_temp_c:10.6f}"
+            if state.core_temp_c is not None
+            else "      n/a "
+        )
         print(
             f"t = {state.time_s:6.1f} s, "
             f"Ts = {state.surface_temp_c:10.6f} C, "
-            f"dT = {state.delta_temp_c:10.6f} C, "
+            f"Tcore = {core_temp_text} C, "
+            f"dTavg = {state.delta_temp_c:10.6f} C, "
             f"net_heat = {state.net_heat_w_per_m:12.6f} W/m"
         )
 
@@ -551,12 +589,14 @@ def main():
         final_current_a=final_step_current_a,
         duration_s=transient_duration_s,
         dt_s=transient_dt_s,
+        kth_w_per_m_c=kth_w_per_m_c,
     )
     time_constant_path, time_constant, tau_markers = save_time_constant_curve(
         model=model738,
         initial_surface_temp_c=max_surface_temp_c,
         final_current_a=final_step_current_a,
         dt_s=transient_dt_s,
+        kth_w_per_m_c=kth_w_per_m_c,
     )
 
     print("\n=== Figure output ===")

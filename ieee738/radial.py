@@ -14,6 +14,35 @@ class RadialGradientResult:
     iterations: int
 
 
+def radial_temperatures_from_avg(
+    model: Model738,
+    current_a: float,
+    avg_temp_c: float,
+    kth_w_per_m_c: float = 1.0,
+) -> RadialGradientResult:
+    """
+    Resolve Ts and Tcore from a known Tavg using IEEE Std 738-2023
+    Annex C Equation C.3.
+    """
+    delta_c = radial_delta_acsr(
+        model=model,
+        current_a=current_a,
+        avg_temp_c=avg_temp_c,
+        kth_w_per_m_c=kth_w_per_m_c,
+    )
+    surface_temp_c = avg_temp_c - delta_c / 2.0
+    core_temp_c = avg_temp_c + delta_c / 2.0
+
+    return RadialGradientResult(
+        surface_temp_c=surface_temp_c,
+        core_temp_c=core_temp_c,
+        avg_temp_c=avg_temp_c,
+        delta_core_surface_c=delta_c,
+        resistance_ohm_per_km=model.c.resistance_ohm_per_km(avg_temp_c),
+        iterations=1,
+    )
+
+
 def radial_delta_acsr(
     model: Model738,
     current_a: float,
@@ -21,7 +50,13 @@ def radial_delta_acsr(
     kth_w_per_m_c: float = 1.0,
 ) -> float:
     """
-    Radial temperature difference for ACSR.
+    Radial temperature difference for a round conductor.
+
+    IEEE Std 738-2023 Annex C:
+        - Equation C.1 is used when a core diameter is provided.
+        - Equation C.2 is used for all-aluminum / homogeneous conductors
+          where d_core = 0.
+        - Equation C.3 defines Tavg = (Tcore + Ts) / 2 in the iteration.
 
     Returns:
         Tcore - Ts, degC
@@ -32,10 +67,13 @@ def radial_delta_acsr(
     d0 = model.c.d_0
     dcore = model.c.d_core
 
-    bracket = (
-        0.5
-        - (dcore**2 / (d0**2 - dcore**2)) * log(d0 / dcore)
-    )
+    if dcore == 0:
+        bracket = 0.5
+    else:
+        bracket = (
+            0.5
+            - (dcore**2 / (d0**2 - dcore**2)) * log(d0 / dcore)
+        )
 
     return (
         current_a**2

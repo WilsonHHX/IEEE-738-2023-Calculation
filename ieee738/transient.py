@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from .model import Model738
-from .radial import solve_radial_gradient
+from .radial import radial_temperatures_from_avg
 
 
 @dataclass
@@ -22,6 +22,7 @@ def transient_temperature_curve(
     dt_s: float = 10.0,
     use_radial_gradient: bool = False,
     kth_w_per_m_c: float = 1.0,
+    initial_current_a: float | None = None,
 ) -> list[ThermalState]:
     """
     IEEE 738 non-steady-state heat balance:
@@ -41,33 +42,35 @@ def transient_temperature_curve(
     states: list[ThermalState] = []
 
     time_s = 0.0
-    ts_c = initial_temp_c
+
+    if use_radial_gradient:
+        tavg_c = initial_temp_c
+        state_current_a = current_a if initial_current_a is None else initial_current_a
+        radial = radial_temperatures_from_avg(
+            model=model,
+            current_a=state_current_a,
+            avg_temp_c=tavg_c,
+            kth_w_per_m_c=kth_w_per_m_c,
+        )
+        ts_c = radial.surface_temp_c
+        core_temp_c = radial.core_temp_c
+    else:
+        ts_c = initial_temp_c
+        tavg_c = ts_c
+        core_temp_c = None
 
     states.append(
         ThermalState(
             time_s=time_s,
             surface_temp_c=ts_c,
-            avg_temp_c=ts_c,
-            core_temp_c=None,
+            avg_temp_c=tavg_c,
+            core_temp_c=core_temp_c,
             net_heat_w_per_m=0.0,
             delta_temp_c=0.0,
         )
     )
 
     while time_s < duration_s - 1e-12:
-        tavg_c = ts_c
-        core_temp_c = None
-
-        if use_radial_gradient:
-            radial = solve_radial_gradient(
-                model=model,
-                surface_temp_c=ts_c,
-                current_a=current_a,
-                kth_w_per_m_c=kth_w_per_m_c,
-            )
-            tavg_c = radial.avg_temp_c
-            core_temp_c = radial.core_temp_c
-
         terms = model.heat_terms(
             ts_c=ts_c,
             tavg_c=tavg_c,
@@ -80,14 +83,28 @@ def transient_temperature_curve(
             / model.c.heat_capacity()
         )
 
-        ts_c += delta_temp_c
+        if use_radial_gradient:
+            tavg_c += delta_temp_c
+            radial = radial_temperatures_from_avg(
+                model=model,
+                current_a=current_a,
+                avg_temp_c=tavg_c,
+                kth_w_per_m_c=kth_w_per_m_c,
+            )
+            ts_c = radial.surface_temp_c
+            core_temp_c = radial.core_temp_c
+        else:
+            ts_c += delta_temp_c
+            tavg_c = ts_c
+            core_temp_c = None
+
         time_s += dt_s
 
         states.append(
             ThermalState(
                 time_s=time_s,
                 surface_temp_c=ts_c,
-                avg_temp_c=ts_c,
+                avg_temp_c=tavg_c,
                 core_temp_c=core_temp_c,
                 net_heat_w_per_m=terms["net_heat_W_per_m"],
                 delta_temp_c=delta_temp_c,

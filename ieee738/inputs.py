@@ -61,6 +61,18 @@ class Conductor:
         if self.t_high_c == self.t_low_c:
             raise ValueError("t_high_c and t_low_c cannot be the same.")
 
+        if self.mass_steel_kg_per_m < 0:
+            raise ValueError("mass_steel_kg_per_m cannot be negative.")
+
+        if self.mass_aluminum_kg_per_m < 0:
+            raise ValueError("mass_aluminum_kg_per_m cannot be negative.")
+
+        if self.heat_capacity() <= 0:
+            raise ValueError(
+                "Conductor heat capacity must be positive. Provide at least one "
+                "positive mass value for transient calculations."
+            )
+
     def resistance_ohm_per_km(self, temp_c: float) -> float:
         """
         Linear interpolation of conductor AC resistance.

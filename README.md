@@ -43,6 +43,8 @@ Use one of these CSV files as a starting point:
 
 - `examples/general_input.csv`: general user input template
 - `examples/example_drake.csv`: Drake/IEEE example values for comparison
+- `testfiles_PLS-CADD_compare/`: comparison test cases with CSV inputs,
+  PLS-CADD reference files, and app-generated results
 
 The CSV format has four columns:
 
@@ -51,6 +53,18 @@ name,variable_name,value,unit
 ```
 
 Users should normally edit only the `value` column.
+
+## PLS-CADD Comparison Test Files
+
+The `testfiles_PLS-CADD_compare/` folder provides ready-to-run examples for
+checking the app against PLS-CADD style reports:
+
+- `drake_acsr IEEE738-2023 example/`: Drake ACSR example with a steel core
+- `anaheim_aaac/`: Anaheim AAAC example with no steel core strand
+
+Each folder includes the input CSV, available PLS-CADD reference files, and
+previous app output plots/reports so users can confirm both conductor types run
+successfully.
 
 ## Run From Python
 

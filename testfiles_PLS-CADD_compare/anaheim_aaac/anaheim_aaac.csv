@@ -1,0 +1,25 @@
+name,variable_name,value,unit
+Conductor data - outside diameter,d_0,0.0113538,m
+Conductor data - steel core diameter,d_core,,m
+Conductor data - solar absorptivity,absorptivity,0.5,-
+Conductor data - radiation emissivity,emissivity,0.5,-
+Conductor data - low-temperature resistance,r_low_ohm_per_km,0.433034,ohm/km
+Conductor data - low resistance temperature,t_low_c,25,C
+Conductor data - high-temperature resistance,r_high_ohm_per_km,0.50679,ohm/km
+Conductor data - high resistance temperature,t_high_c,75,C
+Conductor data - steel mass per unit length,mass_steel_kg_per_m,,kg/m
+Conductor data - aluminum mass per unit length,mass_aluminum_kg_per_m,0.217148,kg/m
+Line location - latitude,lat_deg,26.8,deg
+Line location - line azimuth,z_l_deg,90,deg
+Line location - elevation,elevation_m,100,m
+Weather data - ambient air temperature,t_a_c,40,C
+Weather data - wind speed,v_w_mps,0.61,m/s
+Weather data - wind angle from conductor axis,wind_angle_deg,90,deg
+Weather data - solar time,solar_time_hour,11,h
+Weather data - day of year,day_of_year,172,day
+Weather data - atmosphere code,atmosphere_code,1,0 Clear / 1 Industrial
+Boundary condition - maximum surface temperature,max_surface_temp_c,250,C
+Boundary condition - final step current,final_step_current_a,615.657,A
+Transient setting - total duration,transient_duration_s,3600,s
+Transient setting - time step,transient_dt_s,10,s
+Radial-gradient setting - thermal conductivity,kth_w_per_m_c,2,W/(m*C)

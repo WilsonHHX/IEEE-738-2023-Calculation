@@ -122,6 +122,12 @@ def save_current_temperature_curve(
 
     max_radial_a = current_radial_a[-1]
     max_core_temp_c = core_temperatures_c[-1]
+    max_no_radial_a = steady_state_report_from_temperature(
+        model=model,
+        ts_c=max_surface_temp_c,
+        use_radial_gradient=False,
+        kth_w_per_m_c=kth_w_per_m_c,
+    ).current_a
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     output_path = OUTPUT_DIR / "current_temperature_curve.png"
@@ -148,39 +154,73 @@ def save_current_temperature_curve(
         linestyle="--",
         linewidth=1.2,
     )
+    surface_point_color = "tab:blue"
+    core_point_color = "tab:orange"
+    no_radial_point_color = "0.15"
     ax.scatter(
         [max_radial_a],
         [max_surface_temp_c],
         s=52,
         zorder=3,
+        color=surface_point_color,
     )
     ax.scatter(
         [max_radial_a],
         [max_core_temp_c],
         s=52,
         zorder=3,
-        color="tab:red",
+        color=core_point_color,
     )
-    ax.annotate(
-        f"Surface: {max_radial_a:.1f} A @ {max_surface_temp_c:.1f} C",
-        xy=(max_radial_a, max_surface_temp_c),
-        xytext=(-120, -36),
-        textcoords="offset points",
-        arrowprops={"arrowstyle": "->", "linewidth": 1.0},
-    )
-    ax.annotate(
-        f"Core/center: {max_core_temp_c:.1f} C",
-        xy=(max_radial_a, max_core_temp_c),
-        xytext=(-120, 28),
-        textcoords="offset points",
-        arrowprops={"arrowstyle": "->", "linewidth": 1.0},
+    ax.scatter(
+        [max_no_radial_a],
+        [max_surface_temp_c],
+        s=44,
+        zorder=3,
+        color=no_radial_point_color,
+        marker="x",
+        linewidths=1.6,
     )
 
     ax.set_title("Static Rating Current-Temperature Curve With Radial Gradient")
     ax.set_xlabel("Current, A")
     ax.set_ylabel("Conductor temperature, C")
     ax.grid(True, alpha=0.3)
-    ax.legend()
+    ax.legend(loc="upper left")
+
+    table = ax.table(
+        cellText=[
+            [
+                "Surface limit",
+                f"{max_radial_a:.1f}",
+                f"{max_surface_temp_c:.1f}",
+            ],
+            [
+                "Core/center",
+                f"{max_radial_a:.1f}",
+                f"{max_core_temp_c:.1f}",
+            ],
+            [
+                "No radial calc",
+                f"{max_no_radial_a:.1f}",
+                f"{max_surface_temp_c:.1f}",
+            ],
+        ],
+        colLabels=["Point", "Current (A)", "Temp (C)"],
+        loc="lower right",
+        cellLoc="center",
+        colLoc="center",
+        bbox=[0.52, 0.06, 0.45, 0.28],
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(8.5)
+    table[(1, 0)].get_text().set_color(surface_point_color)
+    table[(2, 0)].get_text().set_color(core_point_color)
+    table[(3, 0)].get_text().set_color(no_radial_point_color)
+    for cell in table.get_celld().values():
+        cell.set_edgecolor("0.70")
+        cell.set_facecolor("white")
+        cell.set_alpha(0.92)
+
     fig.tight_layout()
     fig.savefig(output_path)
     plt.close(fig)
@@ -329,6 +369,27 @@ def save_transient_step_curve(
         temperature_labels + current_labels,
         loc="best",
     )
+
+    table = ax.table(
+        cellText=[
+            ["Surface final", f"{final_state.surface_temp_c:.1f}"],
+            ["Core/center final", f"{final_radial.core_temp_c:.1f}"],
+        ],
+        colLabels=["Point", "Temp (C)"],
+        loc="lower right",
+        cellLoc="center",
+        colLoc="center",
+        bbox=[0.60, 0.08, 0.36, 0.18],
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(8.5)
+    table[(1, 0)].get_text().set_color("tab:red")
+    table[(2, 0)].get_text().set_color("tab:red")
+    for cell in table.get_celld().values():
+        cell.set_edgecolor("0.70")
+        cell.set_facecolor("white")
+        cell.set_alpha(0.92)
+
     fig.tight_layout()
     fig.savefig(output_path)
     plt.close(fig)

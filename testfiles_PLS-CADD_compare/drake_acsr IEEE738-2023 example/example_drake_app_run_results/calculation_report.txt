@@ -1,0 +1,82 @@
+Author: Haixiang Huang
+License: MIT License
+
+=== Loaded input CSV: C:\Users\WilsonHuang\Documents\RR_Power_WorkLaptop_LEGION_Sync\Tools\IEEE 738 Calculation\IEEE 738_Calculator_app\Inputs\example_drake.csv ===
+=== Calculation workflow values at Ts = 100 C ===
+omega_deg                : -15.0000000000
+delta_deg                : 23.0308454576
+Hc_raw_deg               : 74.8960255703
+Hc_deg                   : 74.8960255703
+chi                      : -2.2543920897
+C_deg                    : 180.0000000000
+Zc_deg                   : 113.9210475514
+theta_deg                : 76.2202798472
+Q_s_W_per_m2             : 1027.2770242439
+K_solar                  : 1.0000000000
+Q_se_W_per_m2            : 1027.2770242439
+A_prime_m2_per_m         : 0.0281400000
+q_s_W_per_m              : 22.4604610863
+q_r_W_per_m              : 39.1054546135
+T_film_c                 : 70.0000000000
+mu_f_kg_per_m_s          : 0.0000204276
+rho_f_kg_per_m3          : 1.0287214576
+k_f_W_per_m_c            : 0.0294523057
+N_Re                     : 864.4393706861
+K_angle                  : 1.0000000000
+q_cn_W_per_m             : 42.4158881127
+q_c1_W_per_m             : 82.0830963357
+q_c2_W_per_m             : 77.0340301004
+q_c_W_per_m              : 82.0830963357
+
+=== Steady-state ampacity with radial thermal gradient ===
+Ts            = 100.0000000000 C
+Tcore         = 105.3822232205 C
+Tavg          = 102.6911116102 C
+Tcore - Ts    = 5.3822232205 C
+R(Tavg)       = 0.0946612024 ohm/km
+qc + qr - qs  = 98.7280898628 W/m
+I             = 1021.2553838748 A
+qc            = 82.0830963357 W/m
+qr            = 39.1054546135 W/m
+qs            = 22.4604610863 W/m
+qj            = 98.7280898628 W/m
+net heat      = -0.000000000027 W/m
+iterations    = 5
+
+=== Steady-state temperature from given current, I = 1200 A ===
+I             = 1200.0000000000 A
+Ts            = 120.4506778717 C
+Tcore         = 128.3608261125 C
+Tavg          = 124.4057519921 C
+Tcore - Ts    = 7.9101482408 C
+R(Tavg)       = 0.1007630163 ohm/km
+qc            = 109.9919774145 W/m
+qr            = 57.5672322957 W/m
+qs            = 22.4604610863 W/m
+qj            = 145.0987434861 W/m
+net heat      = -0.000005137793 W/m
+
+=== Transient calculation, If = 1200 A ===
+mCp           = 1309.7776000000 J/(m*C)
+t =    0.0 s, Ts = 100.000000 C, Tcore = 105.382223 C, dTavg =   0.000000 C, net_heat =     0.000000 W/m
+t =   10.0 s, Ts =  99.259326 C, Tcore = 106.696797 C, dTavg =   0.286950 C, net_heat =    37.584042 W/m
+t =   20.0 s, Ts =  99.556261 C, Tcore = 107.000354 C, dTavg =   0.300246 C, net_heat =    39.325576 W/m
+t =   30.0 s, Ts =  99.849196 C, Tcore = 107.299823 C, dTavg =   0.296202 C, net_heat =    38.795875 W/m
+t =   40.0 s, Ts = 100.138181 C, Tcore = 107.595254 C, dTavg =   0.292208 C, net_heat =    38.272737 W/m
+t =   50.0 s, Ts = 100.423265 C, Tcore = 107.886697 C, dTavg =   0.288263 C, net_heat =    37.756096 W/m
+t =   60.0 s, Ts = 100.704496 C, Tcore = 108.174202 C, dTavg =   0.284368 C, net_heat =    37.245886 W/m
+
+=== Figure output ===
+Current-temperature curve: C:\Users\WilsonHuang\Documents\RR_Power_WorkLaptop_LEGION_Sync\Tools\IEEE 738 Calculation\IEEE 738_Calculator_app\Inputs\example_drake_results\current_temperature_curve.png
+Transient step curve     : C:\Users\WilsonHuang\Documents\RR_Power_WorkLaptop_LEGION_Sync\Tools\IEEE 738 Calculation\IEEE 738_Calculator_app\Inputs\example_drake_results\transient_step_curve.png
+Time constant curve      : C:\Users\WilsonHuang\Documents\RR_Power_WorkLaptop_LEGION_Sync\Tools\IEEE 738 Calculation\IEEE 738_Calculator_app\Inputs\example_drake_results\time_constant_curve.png
+
+=== Annex D time constant approximation ===
+tau           = 697.101 s = 11.618 min
+Initial state = 1021.255 A, 100.000 C
+Final state   = 1200.000 A, 120.451 C
+R(Tavg)       = 0.0000967783 ohm/m
+Tau markers:
+1 tau: t = 697.101 s (11.618 min), T = 112.927 C
+2 tau: t = 1394.202 s (23.237 min), T = 117.683 C
+3 tau: t = 2091.303 s (34.855 min), T = 119.432 C

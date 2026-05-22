@@ -1,0 +1,24 @@
+TYPE='CABLE FILE' VERSION='9' UNITS='US' SOURCE='PLS-CADD Version 12.04' USER='Power Line Systems, Inc.' FILENAME=''
+155.4 kcmil 7/0 Strands ANAHEIM AAAC - Adapted from 1970's Publicly Available Data
+anaheim_aaac
+2 10000
+0.1221
+0.447
+0.1459
+5390
+DATA ON THIS LINE IS NOT USED
+-662.8 45172.6 149136 -301976 164892
+-41.4 19145.3 168498 -321552 176589
+91300
+0.00128
+0 0 0 0 0
+0 0 0 0 0
+0
+0.00064
+81
+0 ; num_pts
+1 ; cable_file_type
+0.6969 0.8156 77 167 0.5 0.5 34.8571 0 0 0
+1
+0
+0

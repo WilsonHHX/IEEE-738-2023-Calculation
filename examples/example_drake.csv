@@ -1,0 +1,25 @@
+name,variable_name,value,unit
+IEEE Drake example - outside diameter,d_0,0.02814,m
+IEEE Drake example - steel core diameter,d_core,0.0104,m
+IEEE Drake example - solar absorptivity,absorptivity,0.8,-
+IEEE Drake example - radiation emissivity,emissivity,0.8,-
+IEEE Drake example - low-temperature resistance,r_low_ohm_per_km,0.07283,ohm/km
+IEEE Drake example - low resistance temperature,t_low_c,25,C
+IEEE Drake example - high-temperature resistance,r_high_ohm_per_km,0.08688,ohm/km
+IEEE Drake example - high resistance temperature,t_high_c,75,C
+IEEE Drake example - steel mass per unit length,mass_steel_kg_per_m,0.5126,kg/m
+IEEE Drake example - aluminum mass per unit length,mass_aluminum_kg_per_m,1.116,kg/m
+IEEE Drake example - latitude,lat_deg,30,deg
+IEEE Drake example - line azimuth,z_l_deg,90,deg
+IEEE Drake example - elevation,elevation_m,0,m
+IEEE Drake example - ambient air temperature,t_a_c,40,C
+IEEE Drake example - wind speed,v_w_mps,0.61,m/s
+IEEE Drake example - wind angle from conductor axis,wind_angle_deg,90,deg
+IEEE Drake example - solar time,solar_time_hour,11,h
+IEEE Drake example - day of year,day_of_year,161,day
+IEEE Drake example - atmosphere code,atmosphere_code,0,0 Clear / 1 Industrial
+IEEE Drake example - maximum surface temperature,max_surface_temp_c,100,C
+IEEE Drake example - final step current,final_step_current_a,1200,A
+IEEE Drake example - transient duration,transient_duration_s,3600,s
+IEEE Drake example - transient time step,transient_dt_s,10,s
+IEEE Drake example - radial thermal conductivity,kth_w_per_m_c,1,W/(m*C)

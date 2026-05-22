@@ -1,0 +1,2 @@
+matplotlib>=3.9
+pyinstaller>=6.20

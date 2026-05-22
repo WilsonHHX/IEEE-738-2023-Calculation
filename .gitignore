@@ -1,0 +1,14 @@
+.venv/
+.venv313/
+.vscode/
+__pycache__/
+*.py[cod]
+
+build/
+outputs/
+examples/*_results/
+
+dist/*
+!dist/IEEE738_Calculator.exe
+
+*.log

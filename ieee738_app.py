@@ -12,6 +12,8 @@ matplotlib.use("Agg")
 
 from examples import run_drake
 
+AUTHOR_LINE = "Author: Haixiang Huang"
+
 
 def default_output_dir(input_csv: Path) -> Path:
     return input_csv.with_name(f"{input_csv.stem}_results")
@@ -38,7 +40,13 @@ def run_from_csv(input_csv: Path, output_dir: Path | None = None) -> Path:
         sys.argv = previous_argv
 
     report_path = output_dir / "calculation_report.txt"
-    report_path.write_text(buffer.getvalue(), encoding="utf-8")
+    report = (
+        f"{AUTHOR_LINE}\n"
+        "License: MIT License\n"
+        "\n"
+        f"{buffer.getvalue()}"
+    )
+    report_path.write_text(report, encoding="utf-8")
     return report_path
 
 

@@ -5,10 +5,12 @@ __pycache__/
 *.py[cod]
 
 build/
+build_versioned/
 outputs/
 examples/*_results/
 
 dist/*
 !dist/IEEE738_Calculator.exe
+dist_versioned/
 
 *.log

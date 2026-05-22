@@ -1,6 +1,6 @@
-# IEEE 738 Calculator
+# IEEE-738-2023-Calculation
 
-A small Python/Windows tool for IEEE 738 conductor thermal calculations.
+A Python/Windows tool for overhead conductor ampacity and thermal calculations based on IEEE 738.
 
 The project includes:
 
@@ -78,3 +78,7 @@ The executable is written to:
 ```text
 dist/IEEE738_Calculator.exe
 ```
+
+## License
+
+MIT License. See `LICENSE`.

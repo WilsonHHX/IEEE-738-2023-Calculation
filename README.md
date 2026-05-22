@@ -81,4 +81,6 @@ dist/IEEE738_Calculator.exe
 
 ## License
 
-MIT License. See `LICENSE`.
+Author: Haixiang Huang
+
+This project is released under the MIT License. See `LICENSE`.
